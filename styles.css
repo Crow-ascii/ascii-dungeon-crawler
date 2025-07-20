@@ -1,0 +1,25 @@
+body {
+  font-family: monospace;
+  background-color: #000;
+  color: #0f0;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 1rem;
+}
+
+#room-selection button {
+  margin: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  color: #0f0;
+  cursor: pointer;
+}
+
+#room-selection button:hover {
+  background: #0f0;
+  color: #000;
+}
