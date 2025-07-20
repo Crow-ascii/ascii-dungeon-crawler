@@ -1,33 +1,62 @@
-const rooms = [
-  { id: 'r1', type: 'monster', name: 'Monster Room',   ascii: '(>_<)' },
-  { id: 'r2', type: 'puzzle',  name: 'Puzzle Room',    ascii: '[?]'  },
-  { id: 'r3', type: 'treasure',name: 'Treasure Room',  ascii: '($)'  }
-];
+// Define rooms with positions (x,y), type, ascii art, and which neighbors they connect to.
+const rooms = {
+  "1,1": { type: "start",    ascii: "[@]",      neighbors: ["1,0","2,1","1,2"] },
+  "1,0": { type: "monster",  ascii: "(>_<)",    neighbors: ["1,1"] },
+  "2,1": { type: "puzzle",   ascii: "[?]",      neighbors: ["1,1"] },
+  "1,2": { type: "treasure", ascii: "($)",      neighbors: ["1,1"] }
+};
 
-const roomSelectionDiv = document.getElementById('room-selection');
-const roomContentDiv   = document.getElementById('room-content');
+let currentRoom = "1,1";  // Start in the center
 
-function renderRoomOptions() {
-  roomSelectionDiv.style.display = 'block';
-  roomContentDiv.style.display   = 'none';
-  roomSelectionDiv.innerHTML     = '<h2>Choose a room:</h2>';
+const mapDiv        = document.getElementById("map");
+const roomContent   = document.getElementById("room-content");
 
-  rooms.forEach(room => {
-    const btn = document.createElement('button');
-    btn.textContent = room.name;
-    btn.addEventListener('click', () => enterRoom(room));
-    roomSelectionDiv.appendChild(btn);
-  });
+// Draw the 3×3 grid of cells, showing only current+neighbors.
+function renderMap() {
+  mapDiv.innerHTML = "";
+
+  for (let y = 0; y < 3; y++) {
+    for (let x = 0; x < 3; x++) {
+      const coord = `${x},${y}`;
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+
+      if (coord === currentRoom) {
+        cell.classList.add("current");
+        cell.textContent = "@";  // marker for the player
+      } else if (rooms[currentRoom].neighbors.includes(coord)) {
+        cell.classList.add("neighbor");
+        // leave blank so it’s a mystery until clicked
+        cell.addEventListener("click", () => enterRoom(coord));
+      } else {
+        cell.classList.add("hidden");
+      }
+      mapDiv.appendChild(cell);
+    }
+  }
+
+  // Hide any room-content panel if we're back on the map
+  roomContent.classList.add("hidden");
 }
 
-function enterRoom(room) {
-  roomSelectionDiv.style.display = 'none';
-  roomContentDiv.style.display   = 'block';
-  roomContentDiv.innerHTML = `
-    <pre style="font-size:2rem; line-height:1.2;">${room.ascii}</pre>
-    <p>You entered a <strong>${room.name}</strong> (<em>${room.type}</em>).</p>
-    <button onclick="renderRoomOptions()">Back to map</button>
+// When you click a neighbor, show its ASCII & type.
+function enterRoom(coord) {
+  const info = rooms[coord];
+  roomContent.innerHTML = `
+    <pre style="font-size:2rem; line-height:1.2;">${info.ascii}</pre>
+    <p>You entered a <strong>${info.type}</strong> room.</p>
+    <button id="continue-btn">Continue</button>
   `;
+  roomContent.classList.remove("hidden");
+
+  document
+    .getElementById("continue-btn")
+    .addEventListener("click", () => {
+      // Move into that room and re-render the map
+      currentRoom = coord;
+      renderMap();
+    });
 }
 
-document.addEventListener('DOMContentLoaded', renderRoomOptions);
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", renderMap);
