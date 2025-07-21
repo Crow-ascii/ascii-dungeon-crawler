@@ -1,3 +1,4 @@
+/* ─── GLOBAL ─── */
 body {
   margin: 0;
   padding: 20px;
@@ -6,20 +7,44 @@ body {
   font-family: monospace;
   text-align: center;
 }
+.hidden { display: none; }
 
-h1 {
-  margin-bottom: 1rem;
+/* ─── MAIN MENU ─── */
+#main-menu { margin-top: 50px; }
+#main-menu button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #111;
+  border: 1px solid #0f0;
+  color: #0f0;
+  cursor: pointer;
+}
+#main-menu button:hover {
+  background: #0f0;
+  color: #000;
 }
 
-/* Grid container */
+/* ─── HUD BUTTONS ─── */
+#hud { margin-bottom: 1rem; }
+#hud button {
+  padding: 0.5rem 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  color: #0f0;
+  cursor: pointer;
+}
+#hud button:hover {
+  background: #0f0;
+  color: #000;
+}
+
+/* ─── DUNGEON GRID ─── */
 #map {
   display: grid;
   gap: 8px;
   justify-content: center;
   margin: 0 auto;
 }
-
-/* Each room cell */
 .cell {
   width: 80px;
   height: 80px;
@@ -29,36 +54,47 @@ h1 {
   justify-content: center;
   cursor: pointer;
   background: #000;
+  color: #0f0;
+  transition: background 0.2s, color 0.2s;
 }
-
-.cell.hidden {
-  visibility: hidden;
+/* Unvisited neighbor rooms */
+.cell.neighbor { border-color: #033; }
+/* Explored rooms */
+.cell.explored {
+  background: #055;
+  color: #0ff;
   cursor: default;
 }
-
+/* Current room */
 .cell.current {
   background: #0f0;
   color: #000;
   cursor: default;
 }
-
+/* Hover */
 .cell.neighbor:hover {
-  background: rgba(0,255,0,0.3);
+  background: rgba(0,255,0,0.2);
 }
 
-/* Room content panel */
+/* ─── SEARCH BUTTON ─── */
+#search-btn {
+  margin: 10px auto;
+  padding: 0.5rem 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  color: #0f0;
+  cursor: pointer;
+}
+#search-btn.hidden { display: none; }
+#search-btn:hover {
+  background: #0f0;
+  color: #000;
+}
+
+/* ─── ROOM CONTENT PANEL ─── */
 #room-content {
   margin-top: 20px;
 }
-
-#room-content.hidden {
-  display: none;
-}
-
-#room-content pre {
-  margin: 0;
-}
-
 #room-content button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
@@ -67,8 +103,36 @@ h1 {
   color: #0f0;
   cursor: pointer;
 }
-
 #room-content button:hover {
   background: #0f0;
   color: #000;
+}
+
+/* ─── EXPLORED MAP OVERLAY ─── */
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-content {
+  text-align: center;
+}
+#overlay-grid {
+  display: grid;
+  gap: 4px;
+  justify-content: center;
+  margin: 1rem auto;
+}
+.overlay-cell {
+  width: 60px;
+  height: 60px;
+  border: 1px solid #0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f0;
 }
