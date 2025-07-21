@@ -1,62 +1,93 @@
-// Define rooms with positions (x,y), type, ascii art, and which neighbors they connect to.
-const rooms = {
-  "1,1": { type: "start",    ascii: "[@]",      neighbors: ["1,0","2,1","1,2"] },
-  "1,0": { type: "monster",  ascii: "(>_<)",    neighbors: ["1,1"] },
-  "2,1": { type: "puzzle",   ascii: "[?]",      neighbors: ["1,1"] },
-  "1,2": { type: "treasure", ascii: "($)",      neighbors: ["1,1"] }
-};
+// Call this at the top of main.js, instead of hard-coding `rooms`:
+let rooms = {};
+let currentRoom;
 
-let currentRoom = "1,1";  // Start in the center
+// CONFIG  
+const WIDTH      = 5;     // grid width  
+const HEIGHT     = 5;     // grid height  
+const ROOM_COUNT = 12;    // how many rooms to carve  
+const roomTypes  = [      // weighted list of room types
+  "monster","monster","monster","puzzle","puzzle",
+  "trap","trap","riddle","treasure","treasure"
+];
 
-const mapDiv        = document.getElementById("map");
-const roomContent   = document.getElementById("room-content");
+// Utility to turn x,y into a key
+function key(x,y){ return `${x},${y}`; }
 
-// Draw the 3×3 grid of cells, showing only current+neighbors.
-function renderMap() {
-  mapDiv.innerHTML = "";
+// Generate the dungeon layout
+function generateDungeon() {
+  const visited = new Set();
+  const stack   = [];
 
-  for (let y = 0; y < 3; y++) {
-    for (let x = 0; x < 3; x++) {
-      const coord = `${x},${y}`;
-      const cell = document.createElement("div");
-      cell.classList.add("cell");
+  // Start in the middle row on the left edge
+  const startX = 0, startY = Math.floor(HEIGHT/2);
+  visited.add(key(startX,startY));
+  stack.push([startX,startY]);
 
-      if (coord === currentRoom) {
-        cell.classList.add("current");
-        cell.textContent = "@";  // marker for the player
-      } else if (rooms[currentRoom].neighbors.includes(coord)) {
-        cell.classList.add("neighbor");
-        // leave blank so it’s a mystery until clicked
-        cell.addEventListener("click", () => enterRoom(coord));
-      } else {
-        cell.classList.add("hidden");
+  // Carve rooms until we hit ROOM_COUNT
+  while (visited.size < ROOM_COUNT && stack.length) {
+    // Pick a random room from the carved ones
+    const [x,y] = stack[Math.floor(Math.random()*stack.length)];
+    // Shuffle directions
+    const dirs = [
+      [1,0],[-1,0],[0,1],[0,-1]
+    ].sort(() => Math.random()-0.5);
+
+    // Try each direction until we find a new cell to carve
+    let carved = false;
+    for (let [dx,dy] of dirs) {
+      const nx = x+dx, ny = y+dy;
+      const k  = key(nx,ny);
+      if (nx>=0 && nx<WIDTH && ny>=0 && ny<HEIGHT && !visited.has(k)) {
+        visited.add(k);
+        stack.push([nx,ny]);
+        carved = true;
+        break;
       }
-      mapDiv.appendChild(cell);
     }
+    // If this room has no expansions left, remove from stack
+    if (!carved) stack.splice(stack.indexOf([x,y]),1);
   }
 
-  // Hide any room-content panel if we're back on the map
-  roomContent.classList.add("hidden");
+  // Now build room objects with neighbor lists
+  rooms = {};
+  for (let s of visited) {
+    const [x,y] = s.split(",").map(Number);
+    // Find carved neighbors
+    const neigh = [[1,0],[-1,0],[0,1],[0,-1]]
+      .map(([dx,dy])=>[x+dx,y+dy])
+      .filter(([nx,ny])=>visited.has(key(nx,ny)))
+      .map(([nx,ny])=>key(nx,ny));
+
+    // Randomly pick a type (start stays “start”)
+    const type = (x===startX && y===startY)
+      ? "start"
+      : roomTypes[Math.floor(Math.random()*roomTypes.length)];
+
+    // Fill ascii placeholder (you can override these later per type)
+    const asciiMap = {
+      start:    "@",
+      monster:  "(>_<)",
+      puzzle:   "[?]",
+      trap:     "/!\\",
+      riddle:   "{?}",
+      treasure: "($)"
+    };
+
+    rooms[s] = {
+      type,
+      ascii: asciiMap[type] || "[ ]",
+      neighbors: neigh
+    };
+  }
+
+  // Set the player’s starting room
+  currentRoom = key(startX,startY);
 }
 
-// When you click a neighbor, show its ASCII & type.
-function enterRoom(coord) {
-  const info = rooms[coord];
-  roomContent.innerHTML = `
-    <pre style="font-size:2rem; line-height:1.2;">${info.ascii}</pre>
-    <p>You entered a <strong>${info.type}</strong> room.</p>
-    <button id="continue-btn">Continue</button>
-  `;
-  roomContent.classList.remove("hidden");
+// Call it!
+generateDungeon();
 
-  document
-    .getElementById("continue-btn")
-    .addEventListener("click", () => {
-      // Move into that room and re-render the map
-      currentRoom = coord;
-      renderMap();
-    });
-}
-
-// Initialize on page load
-document.addEventListener("DOMContentLoaded", renderMap);
+// At the bottom of your file, replace any static renderMap() calls
+// with the one that uses the newly populated `rooms` object.
+renderMap();
