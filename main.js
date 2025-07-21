@@ -13,11 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const roomTypes  = ["monster","puzzle","trap","treasure"];
   const asciiMap   = {
     start:    "@",
-    monster:  "(>_<)",
-    puzzle:   "[?]",
-    trap:     "[!]",
-    treasure: "($)",
-    boss:     "(#)"
+
   };
 
   // State
