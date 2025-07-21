@@ -1,12 +1,12 @@
+// main.js
+
 document.addEventListener("DOMContentLoaded", () => {
-  // DOM refs
   const mainMenu  = document.getElementById("main-menu");
   const startBtn  = document.getElementById("start-btn");
   const mapDiv    = document.getElementById("map");
-  const searchBtn = document.getElementById("search-btn");
   const roomPanel = document.getElementById("room-content");
 
-  // Config & data
+  // Configuration
   const WIDTH      = 5;
   const HEIGHT     = 5;
   const ROOM_COUNT = 9;
@@ -20,17 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     boss:     "(#)"
   };
 
-  const player = { hp:100, maxHp:100, atk:10, def:5, spd:8 };
-  const monsters = {
-    goblin:{ name:"Goblin", stats:{hp:30,atk:5,def:2,spd:8} }
-  };
-
   // State
   let rooms = {}, currentRoom, visited = new Set(), bossCoord;
   const key = (x,y) => `${x},${y}`;
 
-  // Build a simple spanning‐tree dungeon + boss at the end
+  // Generate a small dungeon with a boss at the end
   function generateDungeon() {
+    console.log("⚙️  generateDungeon()");
     const carved = new Set();
     const stack  = [];
     const sx = 0, sy = Math.floor(HEIGHT/2);
@@ -39,48 +35,52 @@ document.addEventListener("DOMContentLoaded", () => {
     stack.push([sx,sy]);
 
     while (carved.size < ROOM_COUNT && stack.length) {
-      const i = Math.floor(Math.random()*stack.length);
-      const [x,y] = stack[i];
-      const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
+      const idx = Math.floor(Math.random()*stack.length);
+      const [x,y] = stack[idx];
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(() => Math.random()-0.5);
       let done = false;
       for (let [dx,dy] of dirs) {
         const nx = x+dx, ny = y+dy, k = key(nx,ny);
-        if (nx>=0&&nx<WIDTH&&ny>=0&&ny<HEIGHT&&!carved.has(k)) {
+        if (nx>=0 && nx<WIDTH && ny>=0 && ny<HEIGHT && !carved.has(k)) {
           carved.add(k);
           stack.push([nx,ny]);
           done = true;
           break;
         }
       }
-      if (!done) stack.splice(i,1);
+      if (!done) stack.splice(idx,1);
     }
 
-    // Last carved becomes boss
+    // Last carved is boss
     bossCoord = Array.from(carved).pop();
 
     rooms = {};
     visited.clear();
-    for (let c of carved) {
+    carved.forEach(c => {
       const [x,y] = c.split(",").map(Number);
-      const neighbors = [[1,0],[-1,0],[0,1],[-0,-1]]
-        .map(d=>key(x+d[0],y+d[1]))
-        .filter(k=>carved.has(k));
-      let type = (c===bossCoord) ? "boss"
-               : (x===sx&&y===sy)  ? "start"
-               : roomTypes[Math.floor(Math.random()*roomTypes.length)];
+      const neighbors = [[1,0],[-1,0],[0,1],[0,-1]]
+        .map(d => key(x+d[0], y+d[1]))
+        .filter(k => carved.has(k));
+      let type = (c === bossCoord)
+        ? "boss"
+        : (x===sx && y===sy)
+          ? "start"
+          : roomTypes[Math.floor(Math.random()*roomTypes.length)];
       rooms[c] = { type, ascii: asciiMap[type], neighbors };
-    }
+    });
 
     currentRoom = key(sx,sy);
     visited.add(currentRoom);
+    console.log("  start at", currentRoom);
   }
 
+  // Render current view of the dungeon
   function renderMap() {
-    // Guard: if somehow currentRoom isn't in rooms, reset to start
     if (!rooms[currentRoom]) {
-      console.warn("Invalid currentRoom, resetting to first room");
+      console.warn("⚠️  renderMap(): invalid currentRoom, resetting");
       currentRoom = Object.keys(rooms)[0];
     }
+    console.log("🗺 renderMap()", currentRoom);
 
     mapDiv.innerHTML = "";
     mapDiv.style.gridTemplateColumns = `repeat(${WIDTH},60px)`;
@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           cell.classList.add("hidden");
         }
+
         mapDiv.appendChild(cell);
       }
     }
@@ -114,11 +115,11 @@ document.addEventListener("DOMContentLoaded", () => {
     roomPanel.classList.add("hidden");
   }
 
+  // Handle entering a room
   function enterRoom(c) {
+    console.log("🚪 enterRoom()", c);
     mapDiv.classList.add("hidden");
-    searchBtn.classList.add("hidden");
     const info = rooms[c];
-
     roomPanel.innerHTML = `
       <pre style="font-size:2rem;">${info.ascii}</pre>
       <p>You entered a <strong>${info.type}</strong> room.</p>
@@ -132,8 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Start button: hide menu, build & show dungeon
+  // Start Game button
   startBtn.onclick = () => {
+    console.log("▶️  Start clicked");
     mainMenu.classList.add("hidden");
     generateDungeon();
     renderMap();
