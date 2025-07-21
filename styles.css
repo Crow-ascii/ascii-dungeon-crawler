@@ -108,7 +108,7 @@ body {
   color: #000;
 }
 
-/* ─── EXPLORED MAP OVERLAY ─── */
+/* ─── EXPLORED MAP OVERLAY ───*/
 .overlay {
   position: fixed;
   top: 0; left: 0;
