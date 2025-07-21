@@ -1,4 +1,3 @@
-/* ─── GLOBAL ─── */
 body {
   margin: 0;
   padding: 20px;
@@ -9,7 +8,7 @@ body {
 }
 .hidden { display: none; }
 
-/* ─── MAIN MENU ─── */
+/* Main menu */
 #main-menu { margin-top: 50px; }
 #main-menu button {
   margin-top: 1rem;
@@ -24,7 +23,7 @@ body {
   color: #000;
 }
 
-/* ─── DUNGEON GRID ─── */
+/* Dungeon grid */
 #map {
   display: grid;
   gap: 4px;
@@ -47,7 +46,7 @@ body {
 .cell.neighbor { border-color: #033; }
 .cell.explored { background: #055; color: #0ff; cursor: default; }
 
-/* ─── SEARCH BUTTON ─── */
+/* Search button */
 #search-btn {
   margin: 10px auto;
   padding: 0.5rem 1rem;
@@ -58,7 +57,7 @@ body {
 }
 #search-btn:hover { background: #0f0; color: #000; }
 
-/* ─── ROOM CONTENT PANEL ─── */
+/* Room panel */
 #room-content {
   margin-top: 20px;
 }
