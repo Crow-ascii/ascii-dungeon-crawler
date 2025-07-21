@@ -2,40 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Incremental Dungeon Crawler RPG</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- ─── MAIN MENU ─── -->
+  <!-- MAIN MENU -->
   <div id="main-menu">
     <h1>Incremental Dungeon Crawler RPG</h1>
     <button id="start-btn">Start Game</button>
   </div>
 
-  <!-- ─── HUD BUTTONS ─── -->
-  <div id="hud" class="hidden">
-    <button id="map-btn">View Map</button>
-  </div>
-
-  <!-- ─── DUNGEON GRID ─── -->
+  <!-- DUNGEON GRID -->
   <div id="map" class="hidden"></div>
 
-  <!-- ─── SEARCH FOR SECRET ROOMS ─── -->
+  <!-- SEARCH FOR SECRET ROOMS -->
   <button id="search-btn" class="hidden">Search for Secret Passages</button>
 
-  <!-- ─── ROOM / COMBAT PANEL ─── -->
+  <!-- ROOM CONTENT PANEL -->
   <div id="room-content" class="hidden"></div>
-
-  <!-- ─── EXPLORED MAP OVERLAY ─── -->
-  <div id="explored-map" class="overlay hidden">
-    <div class="overlay-content">
-      <h2>Explored Rooms</h2>
-      <div id="overlay-grid"></div>
-      <button id="close-map-btn">Close Map</button>
-    </div>
-  </div>
 
   <script src="main.js"></script>
 </body>
