@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     start:    "@",
     monster:  "(>_<)",
     puzzle:   "[?]",
-    trap:     "/!\\",
+    trap:     "/!\\\\",
     riddle:   "{?}",
     treasure: "($)",
     boss:     "(#)"
@@ -24,16 +24,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // Player & monsters
   const player = { hp:100, maxHp:100, atk:10, def:5, spd:8 };
   const monsters = {
-    goblin: { name:"Goblin", stats:{hp:30,atk:5,def:2,spd:8}, skills:[{name:"Slash",type:"dmg",power:6,cooldown:0}] },
-    skeleton: { name:"Skeleton", stats:{hp:40,atk:7,def:3,spd:6}, skills:[{name:"Arrow",type:"dmg",power:8,cooldown:1}] },
-    ogre: { name:"Ogre", stats:{hp:100,atk:15,def:8,spd:3}, skills:[{name:"Smash",type:"dmg",power:20,cooldown:2},{name:"Stomp",type:"debuff",power:2,cooldown:3}] }
+    goblin: {
+      name:  "Goblin",
+      stats: { hp:30, atk:5,  def:2, spd:8 },
+      skills:[{ name:"Slash", type:"dmg", power:6, cooldown:0 }]
+    },
+    skeleton: {
+      name:  "Skeleton",
+      stats: { hp:40, atk:7,  def:3, spd:6 },
+      skills:[{ name:"Arrow", type:"dmg", power:8, cooldown:1 }]
+    },
+    ogre: {
+      name:  "Ogre",
+      stats: { hp:100, atk:15, def:8, spd:3 },
+      skills:[
+        { name:"Smash", type:"dmg", power:20, cooldown:2 },
+        { name:"Stomp", type:"debuff", power:2, cooldown:3 }
+      ]
+    }
   };
 
   // State
   let rooms = {}, currentRoom, visited = new Set(), bossCoord;
   const key = (x,y) => `${x},${y}`;
 
-  // Generate a branching dungeon with a guaranteed boss path
+  // Generate dungeon (spanning tree + boss path)
   function generateDungeon() {
     const carved = new Set();
     const stack  = [];
@@ -42,11 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
     carved.add(key(sx,sy));
     stack.push([sx,sy]);
 
-    // Carve until we have ROOM_COUNT rooms
     while (carved.size < ROOM_COUNT && stack.length) {
       const idx = Math.floor(Math.random()*stack.length);
       const [x,y] = stack[idx];
-      const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(() => Math.random()-0.5);
       let done = false;
       for (let [dx,dy] of dirs) {
         const nx = x+dx, ny = y+dy, k = key(nx,ny);
@@ -60,13 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!done) stack.splice(idx,1);
     }
 
-    // Last carved is the boss room
     bossCoord = Array.from(carved).pop();
 
-    // Build room objects
     rooms = {};
     visited.clear();
-    for (let c of carved) {
+    carved.forEach(c => {
       const [x,y] = c.split(",").map(Number);
       const neighbors = [[1,0],[-1,0],[0,1],[0,-1]]
         .map(([dx,dy])=>key(x+dx,y+dy))
@@ -91,13 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
           : {}
         )
       };
-    }
+    });
 
     currentRoom = key(sx,sy);
     visited.add(currentRoom);
   }
 
-  // Render only current, explored, and immediate neighbors
+  // Render map
   function renderMap() {
     mapDiv.innerHTML = "";
     mapDiv.style.gridTemplateColumns = `repeat(${WIDTH},60px)`;
@@ -119,12 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         else if (rooms[currentRoom].neighbors.includes(c)) {
           cell.classList.add("neighbor");
-          cell.addEventListener("click", () => enterRoom(c));
+          cell.onclick = () => enterRoom(c);
         } else {
           cell.classList.add("hidden");
         }
 
-        // Connect paths visually by removing borders
+        // Remove borders for connected paths
         const [cx,cy] = c.split(",").map(Number);
         if (rooms[c].neighbors.includes(key(cx+1,cy))) cell.style.borderRight  = "none";
         if (rooms[c].neighbors.includes(key(cx-1,cy))) cell.style.borderLeft   = "none";
@@ -143,14 +155,14 @@ document.addEventListener("DOMContentLoaded", () => {
     roomPanel.classList.add("hidden");
   }
 
-  // Handle entering non-monster rooms
+  // Enter a room
   function enterRoom(c) {
     mapDiv.classList.add("hidden");
     searchBtn.classList.add("hidden");
 
     const info = rooms[c];
-    if (info.type === "monster" || info.type === "boss") {
-      return startCombat(info.monsterId, info.type === "boss");
+    if (info.type==="monster"||info.type==="boss") {
+      return startCombat(info.monsterId, info.type==="boss");
     }
 
     roomPanel.innerHTML = `
@@ -166,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Turn-based combat for monsters & boss
+  // Combat routine
   function startCombat(monsterKey, isBoss=false) {
     const tpl = monsters[monsterKey];
     const monster = { ...tpl, hp: tpl.stats.hp };
@@ -192,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let i=0; i<pActs; i++) {
         const dmg = Math.max(1, player.atk - monster.stats.def);
         monster.hp -= dmg;
-        log.innerHTML += `<p>You hit for ${dmg} damage.</p>`;
+        log.innerHTML += `<p>You hit for ${dmg}</p>`;
         if (monster.hp <= 0) break;
       }
       document.getElementById("mhp").textContent = Math.max(0, monster.hp);
@@ -218,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let i=0; i<mActs; i++) {
         const dmg = Math.max(1, monster.stats.atk - player.def);
         player.hp -= dmg;
-        log.innerHTML += `<p>${monster.name} hits you for ${dmg} damage.</p>`;
+        log.innerHTML += `<p>${monster.name} hits you for ${dmg}</p>`;
         if (player.hp <= 0) break;
       }
       document.getElementById("php").textContent = Math.max(0, player.hp);
@@ -232,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Search for secret passages (if any)
+  // Search for secret passages
   searchBtn.onclick = () => {
     rooms[currentRoom].neighbors.push(
       ...rooms[currentRoom].neighbors.filter(n => !visited.has(n))
@@ -240,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMap();
   };
 
-  // Start the game: hide menu, generate and render the dungeon
+  // Start game button
   startBtn.onclick = () => {
     mainMenu.classList.add("hidden");
     generateDungeon();
