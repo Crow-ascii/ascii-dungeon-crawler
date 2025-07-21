@@ -44,7 +44,7 @@ body {
 .cell.hidden { visibility: hidden; cursor: default; }
 .cell.current { background: #0f0; color: #000; cursor: default; }
 .cell.neighbor { border-color: #033; }
-.cell.explored { background: #055; color: #0ff; cursor: default; }
+.cell.explored { background: #055; color: #0ff; cursor: cursor: pointer; }
 
 /* Search button */
 #search-btn {
