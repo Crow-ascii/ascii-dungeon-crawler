@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const overlayGrid = document.getElementById("overlay-grid");
   const closeMapBtn = document.getElementById("close-map-btn");
 
-  // ─── CONFIG & DATA ───
+  // ───CONFIG & DATA ───
   const WIDTH      = 5;
   const HEIGHT     = 5;
   const ROOM_COUNT = 12;
