@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const mapDiv    = document.getElementById("map");
   const roomPanel = document.getElementById("room-content");
 
-  // Config & data
+  // Config
   const WIDTH      = 6;
   const HEIGHT     = 6;
   const ROOM_COUNT = 12;
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let rooms = {}, currentRoom, visited = new Set(), bossCoord;
   const key = (x,y) => `${x},${y}`;
 
-  // 1) Dungeon generation
+  // 1) Dungeon generation with boss at end
   function generateDungeon() {
     const carved = new Set();
     const stack  = [];
@@ -50,12 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!done) stack.splice(idx,1);
     }
 
-    // designate boss room
+    // Last carved = boss
     bossCoord = Array.from(carved).pop();
 
     rooms = {};
     visited.clear();
-    for (let c of carved) {
+    carved.forEach(c => {
       const [x,y] = c.split(",").map(Number);
       const neighbors = [[1,0],[-1,0],[0,1],[0,-1]]
         .map(d => key(x+d[0], y+d[1]))
@@ -66,19 +66,17 @@ document.addEventListener("DOMContentLoaded", () => {
           ? "start"
           : roomTypes[Math.floor(Math.random()*roomTypes.length)];
       rooms[c] = { type, ascii: asciiMap[type], neighbors };
-    }
+    });
 
     currentRoom = key(sx,sy);
     visited.add(currentRoom);
   }
 
-  // 2) Render the map: only current, neighbors, and explored
+  // 2) Render map: current, neighbors, explored backtracking
   function renderMap() {
-    // safety check
     if (!rooms[currentRoom]) {
       currentRoom = Object.keys(rooms)[0];
     }
-
     mapDiv.innerHTML = "";
     mapDiv.style.gridTemplateColumns = `repeat(${WIDTH}, 60px)`;
     mapDiv.style.gridTemplateRows    = `repeat(${HEIGHT}, 60px)`;
@@ -94,20 +92,19 @@ document.addEventListener("DOMContentLoaded", () => {
           cell.textContent = asciiMap.start;
         }
         else if (rooms[currentRoom].neighbors.includes(c)) {
-          // unexplored neighbor
+          // Unexplored neighbor
           cell.classList.add("neighbor");
           cell.onclick = () => enterRoom(c);
         }
         else if (visited.has(c)) {
-          // explored room: allow backtracking
+          // Explored (backtrack)
           cell.classList.add("explored");
           cell.textContent = rooms[c].ascii;
           cell.onclick = () => {
             currentRoom = c;
             renderMap();
           };
-        }
-        else {
+        } else {
           cell.classList.add("hidden");
         }
 
@@ -119,26 +116,56 @@ document.addEventListener("DOMContentLoaded", () => {
     roomPanel.classList.add("hidden");
   }
 
-  // 3) Room entry for neighbor rooms
+  // 3) Enter a room → show ASCII monster/name/HP bar
   function enterRoom(c) {
     mapDiv.classList.add("hidden");
     const info = rooms[c];
 
-    roomPanel.innerHTML = `
-      <pre style="font-size:2rem;">${info.ascii}</pre>
-      <p>You entered a <strong>${info.type}</strong> room.</p>
-      <button id="clear-btn">Clear Room</button>
-    `;
-    roomPanel.classList.remove("hidden");
+    // Build combat UI if monster or boss, else simple panel
+    if (info.type === "monster" || info.type === "boss") {
+      roomPanel.innerHTML = `
+        <div class="combat-container">
+          <h2 class="monster-name">${info.type === "boss" ? "Boss" : "Monster"}</h2>
+          <pre class="monster-ascii">${asciiMap.monster}</pre>
+          <div class="hp-bar"><div id="hp-fill" class="hp-fill"></div></div>
+          <button id="attack-btn">Attack</button>
+          <div id="combat-log"></div>
+        </div>
+      `;
+      roomPanel.classList.remove("hidden");
 
-    document.getElementById("clear-btn").onclick = () => {
-      visited.add(c);
-      currentRoom = c;
-      renderMap();
-    };
+      // initialize HP bar
+      const hpFill = document.getElementById("hp-fill");
+      let hp = 100; // example static HP; wire in real stats here
+      hpFill.style.width = "100%";
+
+      document.getElementById("attack-btn").onclick = () => {
+        // dummy damage for illustration
+        hp = Math.max(0, hp - 20);
+        hpFill.style.width = (hp / 100 * 100) + "%";
+        if (hp === 0) {
+          document.getElementById("combat-log").textContent =
+            info.type === "boss"
+              ? "You defeated the Boss! Dungeon cleared!"
+              : "You defeated the monster!";
+        }
+      };
+    } else {
+      roomPanel.innerHTML = `
+        <pre style="font-size:2rem;">${info.ascii}</pre>
+        <p>You entered a <strong>${info.type}</strong> room.</p>
+        <button id="clear-btn">Clear Room</button>
+      `;
+      roomPanel.classList.remove("hidden");
+      document.getElementById("clear-btn").onclick = () => {
+        visited.add(c);
+        currentRoom = c;
+        renderMap();
+      };
+    }
   }
 
-  // 4) Start button logic
+  // 4) Start Game
   startBtn.onclick = () => {
     mainMenu.classList.add("hidden");
     generateDungeon();
