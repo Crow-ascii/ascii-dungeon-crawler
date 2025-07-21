@@ -44,23 +44,45 @@ body {
 .cell.hidden { visibility: hidden; cursor: default; }
 .cell.current { background: #0f0; color: #000; cursor: default; }
 .cell.neighbor { border-color: #033; }
-.cell.explored { background: #055; color: #0ff; cursor: cursor: pointer; }
-
-/* Search button */
-#search-btn {
-  margin: 10px auto;
-  padding: 0.5rem 1rem;
-  background: #111;
-  border: 1px solid #0f0;
-  color: #0f0;
-  cursor: pointer;
+.cell.explored {
+  background: #055;
+  color: #0ff;
+  cursor: pointer; /* backtracking now clickable */
 }
-#search-btn:hover { background: #0f0; color: #000; }
 
-/* Room panel */
+/* Room panel & combat */
 #room-content {
   margin-top: 20px;
 }
+/* Combat container */
+.combat-container {
+  text-align: center;
+  margin-top: 20px;
+}
+.monster-name {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.monster-ascii {
+  font-size: 4rem;
+  line-height: 1;
+  margin: 0.5rem 0;
+}
+/* HP bar like Pokémon */
+.hp-bar {
+  width: 200px;
+  height: 20px;
+  border: 1px solid #0f0;
+  background: #000;
+  margin: 0.5rem auto;
+}
+.hp-fill {
+  height: 100%;
+  background: #0f0;
+  width: 100%;
+  transition: width 0.3s ease;
+}
+
 #room-content button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
