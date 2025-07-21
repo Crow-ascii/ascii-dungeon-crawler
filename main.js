@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // ─── DOM NODES ───
-  const mainMenu    = document.getElementById("main-menu");
-  const startBtn    = document.getElementById("start-btn");
-  const mapDiv      = document.getElementById("map");
-  const searchBtn   = document.getElementById("search-btn");
-  const roomPanel   = document.getElementById("room-content");
+  // DOM elements
+  const mainMenu  = document.getElementById("main-menu");
+  const startBtn  = document.getElementById("start-btn");
+  const mapDiv    = document.getElementById("map");
+  const searchBtn = document.getElementById("search-btn");
+  const roomPanel = document.getElementById("room-content");
 
-  // ─── CONFIG & DATA ───
+  // Configuration
   const WIDTH      = 6;
   const HEIGHT     = 6;
   const ROOM_COUNT = 14;
@@ -21,47 +21,34 @@ document.addEventListener("DOMContentLoaded", () => {
     boss:     "(#)"
   };
 
-  const player = { name:"You", hp:100, maxHp:100, atk:10, def:5, spd:8 };
+  // Player & monsters
+  const player = { hp:100, maxHp:100, atk:10, def:5, spd:8 };
   const monsters = {
-    goblin: {
-      name:  "Goblin",
-      stats: { hp:30, atk:5,  def:2, spd:8 },
-      skills:[{ name:"Slash", type:"dmg", power:6, cooldown:0 }]
-    },
-    skeleton: {
-      name:  "Skeleton",
-      stats: { hp:40, atk:7,  def:3, spd:6 },
-      skills:[{ name:"Arrow", type:"dmg", power:8, cooldown:1 }]
-    },
-    ogre: {
-      name:  "Ogre",
-      stats: { hp:100, atk:15, def:8, spd:3 },
-      skills:[
-        { name:"Smash", type:"dmg", power:20, cooldown:2 },
-        { name:"Stomp", type:"debuff", power:2, cooldown:3 }
-      ]
-    }
+    goblin: { name:"Goblin", stats:{hp:30,atk:5,def:2,spd:8}, skills:[{name:"Slash",type:"dmg",power:6,cooldown:0}] },
+    skeleton: { name:"Skeleton", stats:{hp:40,atk:7,def:3,spd:6}, skills:[{name:"Arrow",type:"dmg",power:8,cooldown:1}] },
+    ogre: { name:"Ogre", stats:{hp:100,atk:15,def:8,spd:3}, skills:[{name:"Smash",type:"dmg",power:20,cooldown:2},{name:"Stomp",type:"debuff",power:2,cooldown:3}] }
   };
 
-  // ─── STATE & HELPERS ───
+  // State
   let rooms = {}, currentRoom, visited = new Set(), bossCoord;
   const key = (x,y) => `${x},${y}`;
 
-  // ─── DUNGEON GENERATION ───
+  // Generate a branching dungeon with a guaranteed boss path
   function generateDungeon() {
     const carved = new Set();
     const stack  = [];
-
-    // carve a spanning tree
     const sx = 0, sy = Math.floor(HEIGHT/2);
-    carved.add(key(sx,sy)); stack.push([sx,sy]);
 
+    carved.add(key(sx,sy));
+    stack.push([sx,sy]);
+
+    // Carve until we have ROOM_COUNT rooms
     while (carved.size < ROOM_COUNT && stack.length) {
       const idx = Math.floor(Math.random()*stack.length);
       const [x,y] = stack[idx];
       const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
       let done = false;
-      for (const [dx,dy] of dirs) {
+      for (let [dx,dy] of dirs) {
         const nx = x+dx, ny = y+dy, k = key(nx,ny);
         if (nx>=0 && nx<WIDTH && ny>=0 && ny<HEIGHT && !carved.has(k)) {
           carved.add(k);
@@ -73,17 +60,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!done) stack.splice(idx,1);
     }
 
-    // mark the last carved as boss
+    // Last carved is the boss room
     bossCoord = Array.from(carved).pop();
 
-    // build rooms data
+    // Build room objects
     rooms = {};
     visited.clear();
-    carved.forEach(c => {
+    for (let c of carved) {
       const [x,y] = c.split(",").map(Number);
-      const neigh = [[1,0],[-1,0],[0,1],[0,-1]]
+      const neighbors = [[1,0],[-1,0],[0,1],[0,-1]]
         .map(([dx,dy])=>key(x+dx,y+dy))
         .filter(k=>carved.has(k));
+
       let type = (c === bossCoord)
         ? "boss"
         : (x===sx && y===sy)
@@ -93,8 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
       rooms[c] = {
         type,
         ascii: asciiMap[type],
-        neighbors: neigh,
-        ...(type === "monster" || type === "boss"
+        neighbors,
+        ...(type==="monster"||type==="boss"
           ? { monsterId:
               Object.keys(monsters)[
                 Math.floor(Math.random()*Object.keys(monsters).length)
@@ -103,13 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
           : {}
         )
       };
-    });
+    }
 
     currentRoom = key(sx,sy);
     visited.add(currentRoom);
   }
 
-  // ─── RENDER MAP ───
+  // Render only current, explored, and immediate neighbors
   function renderMap() {
     mapDiv.innerHTML = "";
     mapDiv.style.gridTemplateColumns = `repeat(${WIDTH},60px)`;
@@ -119,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       for (let x=0; x<WIDTH; x++) {
         const c = key(x,y);
         const cell = document.createElement("div");
-        cell.classList.add("cell");
+        cell.className = "cell";
 
         if (c === currentRoom) {
           cell.classList.add("current");
@@ -136,12 +124,12 @@ document.addEventListener("DOMContentLoaded", () => {
           cell.classList.add("hidden");
         }
 
-        // visually link paths by removing borders
+        // Connect paths visually by removing borders
         const [cx,cy] = c.split(",").map(Number);
-        if (rooms[c].neighbors.includes(key(cx+1,cy))) cell.style.borderRight = "none";
-        if (rooms[c].neighbors.includes(key(cx-1,cy))) cell.style.borderLeft  = "none";
-        if (rooms[c].neighbors.includes(key(cx,cy+1))) cell.style.borderBottom= "none";
-        if (rooms[c].neighbors.includes(key(cx,cy-1))) cell.style.borderTop   = "none";
+        if (rooms[c].neighbors.includes(key(cx+1,cy))) cell.style.borderRight  = "none";
+        if (rooms[c].neighbors.includes(key(cx-1,cy))) cell.style.borderLeft   = "none";
+        if (rooms[c].neighbors.includes(key(cx,cy+1))) cell.style.borderBottom = "none";
+        if (rooms[c].neighbors.includes(key(cx,cy-1))) cell.style.borderTop    = "none";
 
         mapDiv.appendChild(cell);
       }
@@ -155,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     roomPanel.classList.add("hidden");
   }
 
-  // ─── ENTER ROOM ───
+  // Handle entering non-monster rooms
   function enterRoom(c) {
     mapDiv.classList.add("hidden");
     searchBtn.classList.add("hidden");
@@ -171,14 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
       <button id="clear-btn">Clear Room</button>
     `;
     roomPanel.classList.remove("hidden");
-    document.getElementById("clear-btn").addEventListener("click", () => {
+    document.getElementById("clear-btn").onclick = () => {
       visited.add(c);
       currentRoom = c;
       renderMap();
-    });
+    };
   }
 
-  // ─── COMBAT SYSTEM ───
+  // Turn-based combat for monsters & boss
   function startCombat(monsterKey, isBoss=false) {
     const tpl = monsters[monsterKey];
     const monster = { ...tpl, hp: tpl.stats.hp };
@@ -188,20 +176,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <pre style="font-size:2rem;">${asciiMap.monster}</pre>
       <div id="log" style="min-height:4em;"></div>
       <div>
-        Player HP: <span id="php">${player.hp}</span> / ${player.maxHp}<br>
-        Monster HP: <span id="mhp">${monster.hp}</span> / ${monster.stats.hp}
+        You HP: <span id="php">${player.hp}</span> / ${player.maxHp}<br>
+        ${monster.name} HP: <span id="mhp">${monster.hp}</span> / ${monster.stats.hp}
       </div>
       <button id="atk">Attack</button>
     `;
     roomPanel.classList.remove("hidden");
 
-    document.getElementById("atk").addEventListener("click", () => {
+    document.getElementById("atk").onclick = () => {
       const log = document.getElementById("log");
       log.innerHTML = "";
 
-      // player actions
+      // Player actions
       const pActs = Math.max(1, Math.floor(player.spd / monster.stats.spd));
-      for (let i = 0; i < pActs; i++) {
+      for (let i=0; i<pActs; i++) {
         const dmg = Math.max(1, player.atk - monster.stats.def);
         monster.hp -= dmg;
         log.innerHTML += `<p>You hit for ${dmg} damage.</p>`;
@@ -209,25 +197,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       document.getElementById("mhp").textContent = Math.max(0, monster.hp);
 
-      // monster defeated?
+      // Monster defeated?
       if (monster.hp <= 0) {
         log.innerHTML += `<p><strong>${
           isBoss ? "You defeated the Boss! Dungeon Cleared!" : `You defeated ${monster.name}!`
         }</strong></p>
         <button id="cont">${isBoss ? "Finish" : "Continue"}</button>`;
-        document.getElementById("cont").addEventListener("click", () => {
+        document.getElementById("cont").onclick = () => {
           if (isBoss) location.reload();
           else {
             visited.add(currentRoom);
             renderMap();
           }
-        });
+        };
         return;
       }
 
-      // monster actions
+      // Monster actions
       const mActs = Math.max(1, Math.floor(monster.stats.spd / player.spd));
-      for (let i = 0; i < mActs; i++) {
+      for (let i=0; i<mActs; i++) {
         const dmg = Math.max(1, monster.stats.atk - player.def);
         player.hp -= dmg;
         log.innerHTML += `<p>${monster.name} hits you for ${dmg} damage.</p>`;
@@ -235,27 +223,27 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       document.getElementById("php").textContent = Math.max(0, player.hp);
 
-      // player died?
+      // Player died?
       if (player.hp <= 0) {
         log.innerHTML += `<p><strong>You died…</strong></p>
-        <button id="retry">Retry</button>`;
-        document.getElementById("retry").addEventListener("click", () => location.reload());
+          <button id="retry">Retry</button>`;
+        document.getElementById("retry").onclick = () => location.reload();
       }
-    });
+    };
   }
 
-  // ─── SEARCH FOR SECRET ROOMS ───
-  searchBtn.addEventListener("click", () => {
+  // Search for secret passages (if any)
+  searchBtn.onclick = () => {
     rooms[currentRoom].neighbors.push(
       ...rooms[currentRoom].neighbors.filter(n => !visited.has(n))
     );
     renderMap();
-  });
+  };
 
-  // ─── START GAME ───
-  startBtn.addEventListener("click", () => {
+  // Start the game: hide menu, generate and render the dungeon
+  startBtn.onclick = () => {
     mainMenu.classList.add("hidden");
     generateDungeon();
     renderMap();
-  });
+  };
 });
